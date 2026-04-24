@@ -154,3 +154,38 @@ The application is functional with all core features implemented:
 - Fixed AnimatedCounter setState-in-effect lint error
 - Fixed NotificationPanel useCallback/before-declaration lint errors
 - All components pass `bun run lint` with zero errors
+
+---
+
+## Session 3 Changes (Bug Fixes & QA)
+
+### 13. Fixed Hydration Mismatch (Critical)
+- **Issue**: `Math.random()` calls in LandingPage, EventFeed, and ClubsView particle positions caused React hydration mismatches between server and client rendering
+- **Fix**: Replaced all `Math.random()` usage with deterministic `useMemo` positions and hardcoded particle data arrays
+- **Files**: LandingPage.tsx, EventFeed.tsx, ClubsView.tsx
+- **Result**: Zero hydration errors in console
+
+### 14. Fixed EventDetail Data Not Loading (Critical)
+- **Issue**: `fetchEventById` in event-store was treating the API response `{event: {...}}` as the event object directly, causing all event fields to be undefined
+- **Fix**: Changed `set({ currentEvent: data })` to `set({ currentEvent: data.event || data })` to properly extract the nested event object
+- **File**: src/store/event-store.ts
+- **Result**: Event detail page now shows correct title, dates, venue, registrations, etc.
+
+### 15. Fixed Scroll Container Warning
+- **Issue**: Framer Motion `useScroll` with a target container that doesn't scroll caused "Please ensure that the container has a non-static position" warning
+- **Fix**: Changed `useScroll({ target: containerRef })` to `useScroll({ offset: ['start start', 'end start'] })` to use window scroll
+- **File**: LandingPage.tsx
+
+### 16. Fixed DialogContent Missing Description Warning
+- **Issue**: AuthModal DialogContent was missing `aria-describedby` prop causing accessibility warning
+- **Fix**: Added `aria-describedby={undefined}` to DialogContent
+- **File**: AuthModal.tsx
+
+### 17. Comprehensive QA Testing
+- Tested all views via agent-browser: Landing Page ✅, Auth Modal ✅, Event Feed ✅, Event Detail ✅, Clubs ✅, Dashboard ✅, Admin Panel ✅, QR Scanner ✅, Profile ✅, My Events ✅, Create Event ✅
+- Verified all API endpoints return 200 status codes
+- Verified all demo accounts work (Admin, Faculty, Organizer, Student)
+- Verified event registration flow
+- Verified club join/leave functionality
+- Verified admin approval workflow (pending events visible)
+- Verified lint passes with zero errors

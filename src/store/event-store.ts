@@ -241,8 +241,8 @@ export const useEventStore = create<EventState>()((set, get) => ({
         throw new Error(data.error || 'Failed to fetch event');
       }
 
-      const data: Event = await res.json();
-      set({ currentEvent: data, isLoading: false });
+      const data = await res.json();
+      set({ currentEvent: data.event || data, isLoading: false });
     } catch (err) {
       set({
         isLoading: false,

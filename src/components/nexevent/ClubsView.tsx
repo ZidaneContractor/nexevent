@@ -75,13 +75,18 @@ export function ClubsView() {
         className="relative rounded-2xl overflow-hidden mb-6 p-6 sm:p-8 bg-gradient-to-br from-chart-2/10 via-primary/5 to-chart-4/10 border border-primary/10"
       >
         <div className="absolute inset-0 dot-pattern opacity-20" />
-        {[...Array(4)].map((_, i) => (
+        {[
+          { top: 25, left: 15, duration: 4.2, delay: 0.3 },
+          { top: 55, left: 75, duration: 5.1, delay: 1.1 },
+          { top: 70, left: 40, duration: 3.8, delay: 0.7 },
+          { top: 35, left: 85, duration: 4.7, delay: 0.5 },
+        ].map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-1.5 h-1.5 rounded-full bg-chart-2/20"
-            style={{ top: `${20 + Math.random() * 60}%`, left: `${5 + Math.random() * 90}%` }}
+            style={{ top: `${p.top}%`, left: `${p.left}%` }}
             animate={{ y: [0, -10, 0], opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 3 + Math.random() * 2, delay: Math.random() * 2, repeat: Infinity }}
+            transition={{ duration: p.duration, delay: p.delay, repeat: Infinity }}
           />
         ))}
         <div className="relative z-10">

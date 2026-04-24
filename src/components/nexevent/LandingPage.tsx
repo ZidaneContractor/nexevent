@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/auth-store';
 import { useUIStore } from '@/store/ui-store';
@@ -106,9 +106,25 @@ export function LandingPage() {
   const { fetchEvents } = useEventStore();
   const [stats, setStats] = useState<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: containerRef, offset: ['start start', 'end start'] });
+  const { scrollYProgress } = useScroll({ offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  // Deterministic particle positions to avoid hydration mismatch
+  const particlePositions = useMemo(() => [
+    { top: 18, left: 12, duration: 4.2, delay: 0.3 },
+    { top: 45, left: 78, duration: 5.1, delay: 1.1 },
+    { top: 72, left: 35, duration: 3.8, delay: 0.7 },
+    { top: 30, left: 65, duration: 6.3, delay: 2.0 },
+    { top: 55, left: 90, duration: 4.7, delay: 0.5 },
+    { top: 82, left: 18, duration: 5.5, delay: 1.5 },
+    { top: 22, left: 50, duration: 3.5, delay: 2.3 },
+    { top: 65, left: 8, duration: 6.0, delay: 0.9 },
+    { top: 38, left: 42, duration: 4.9, delay: 1.8 },
+    { top: 75, left: 72, duration: 3.2, delay: 2.6 },
+    { top: 48, left: 25, duration: 5.8, delay: 0.2 },
+    { top: 60, left: 55, duration: 4.4, delay: 1.3 },
+  ], []);
 
   useEffect(() => {
     fetch('/api/stats?userId=demo').then(r => r.json()).then(d => setStats(d.stats)).catch(() => {});
@@ -169,13 +185,13 @@ export function LandingPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/3 rounded-full blur-[100px]" />
 
         {/* Animated particles */}
-        {[...Array(12)].map((_, i) => (
+        {particlePositions.map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-1 h-1 rounded-full bg-primary/30"
             style={{
-              top: `${15 + Math.random() * 70}%`,
-              left: `${5 + Math.random() * 90}%`,
+              top: `${p.top}%`,
+              left: `${p.left}%`,
             }}
             animate={{
               y: [0, -30, 0],
@@ -183,8 +199,8 @@ export function LandingPage() {
               scale: [1, 1.5, 1],
             }}
             transition={{
-              duration: 3 + Math.random() * 4,
-              delay: Math.random() * 3,
+              duration: p.duration,
+              delay: p.delay,
               repeat: Infinity,
               ease: 'easeInOut',
             }}

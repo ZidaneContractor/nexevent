@@ -275,13 +275,20 @@ export function EventFeed() {
       >
         <div className="absolute inset-0 dot-pattern opacity-20" />
         {/* Floating particles */}
-        {[...Array(6)].map((_, i) => (
+        {[
+          { top: 25, left: 15, duration: 4.2, delay: 0.3 },
+          { top: 55, left: 75, duration: 5.1, delay: 1.1 },
+          { top: 70, left: 40, duration: 3.8, delay: 0.7 },
+          { top: 35, left: 85, duration: 4.7, delay: 0.5 },
+          { top: 80, left: 20, duration: 5.5, delay: 1.5 },
+          { top: 40, left: 55, duration: 3.5, delay: 2.3 },
+        ].map((p, i) => (
           <motion.div
             key={i}
             className="absolute w-1.5 h-1.5 rounded-full bg-primary/20"
-            style={{ top: `${20 + Math.random() * 60}%`, left: `${5 + Math.random() * 90}%` }}
+            style={{ top: `${p.top}%`, left: `${p.left}%` }}
             animate={{ y: [0, -15, 0], opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 3 + Math.random() * 3, delay: Math.random() * 2, repeat: Infinity }}
+            transition={{ duration: p.duration, delay: p.delay, repeat: Infinity }}
           />
         ))}
 

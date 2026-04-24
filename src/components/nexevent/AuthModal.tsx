@@ -50,7 +50,7 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login' }: AuthModalP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md glass border-border/30">
+      <DialogContent className="sm:max-w-md glass border-border/30" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
             {mode === 'login' ? 'Welcome Back' : 'Join NexEvent'}
