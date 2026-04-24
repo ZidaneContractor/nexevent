@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ORGANIZER
+  FACULTY
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventCategory {
+  TECHNICAL
+  CULTURAL
+  SPORTS
+  WORKSHOP
+  SEMINAR
+  HACKATHON
+  SOCIAL
+  OTHER
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABENT
+  LATE
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  avatar        String?
+  role          UserRole @default(STUDENT)
+  department    String?
+  usn           String?  // University Seat Number for students
+  phone         String?
+  passwordHash  String   @default("")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  clubMemberships    ClubMember[]
+  organizedEvents    Event[]       @relation("EventOrganizer")
+  approvedEvents     Event[]       @relation("EventApprover")
+  registrations      EventRegistration[]
+  attendances        Attendance[]
+  facultyClubs       Club[]       @relation("FacultyAdvisor")
+}
+
+model Club {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  slug            String   @unique
+  description     String
+  logo            String?
+  coverImage      String?
+  category        EventCategory @default(OTHER)
+  isActive        Boolean  @default(true)
+  foundedYear     Int?
+  facultyAdvisorId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  facultyAdvisor  User?       @relation("FacultyAdvisor", fields: [facultyAdvisorId], references: [id])
+  members         ClubMember[]
+  events          Event[]
+}
+
+model ClubMember {
+  id        String   @id @default(cuid())
+  userId    String
+  clubId    String
+  role      String   @default("member") // president, secretary, treasurer, member
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  club      Club     @relation(fields: [clubId], references: [id])
+
+  @@unique([userId, clubId])
+}
+
+model Event {
+  id                String       @id @default(cuid())
+  title             String
+  slug              String       @unique
+  description       String
+  poster            String?      // URL to event poster image
+  category          EventCategory @default(OTHER)
+  status            EventStatus  @default(DRAFT)
+  venue             String
+  venueLat          Float?
+  venueLng          Float?
+  geoFenceRadius    Float?       // in meters
+  startDate         DateTime
+  endDate           DateTime
+  registrationDeadline DateTime?
+  maxParticipants   Int?
+  isPublic          Boolean      @default(true)
+  requiresApproval  Boolean      @default(false)
+  tags              String       @default("") // comma-separated tags
+  organizerId       String
+  approverId        String?
+  approvedAt        DateTime?
+  rejectionReason   String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  organizer         User         @relation("EventOrganizer", fields: [organizerId], references: [id])
+  approver          User?        @relation("EventApprover", fields: [approverId], references: [id])
+  club              Club?        @relation(fields: [clubId], references: [id])
+  clubId            String?
+  registrations     EventRegistration[]
+  attendances       Attendance[]
+  report            EventReport?
+}
+
+model EventRegistration {
+  id              String             @id @default(cuid())
+  eventId         String
+  userId          String
+  status          RegistrationStatus @default(REGISTERED)
+  qrCode          String?            // unique QR code identifier
+  registeredAt    DateTime           @default(now())
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+
+  event           Event              @relation(fields: [eventId], references: [id])
+  user            User               @relation(fields: [userId], references: [id])
+  attendance      Attendance?
+
+  @@unique([eventId, userId])
+}
+
+model Attendance {
+  id              String           @id @default(cuid())
+  registrationId  String           @unique
+  eventId         String
+  userId          String
+  status          AttendanceStatus @default(PRESENT)
+  checkInTime     DateTime         @default(now())
+  checkInLat      Float?
+  checkInLng      Float?
+  isWithinGeoFence Boolean         @default(true)
+  notes           String?
+
+  registration    EventRegistration @relation(fields: [registrationId], references: [id])
+  event           Event            @relation(fields: [eventId], references: [id])
+  user            User             @relation(fields: [userId], references: [id])
+}
+
+model EventReport {
+  id              String   @id @default(cuid())
+  eventId         String   @unique
+  totalRegistered Int      @default(0)
+  totalPresent    Int      @default(0)
+  totalAbsent     Int      @default(0)
+  attendanceRate  Float    @default(0)
+  summary         String?
+  pdfUrl          String?
+  generatedAt     DateTime @default(now())
+
+  event           Event    @relation(fields: [eventId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   @default("info") // info, success, warning, error
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
