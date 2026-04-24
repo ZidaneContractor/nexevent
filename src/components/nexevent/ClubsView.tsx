@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/auth-store';
 import { useUIStore } from '@/store/ui-store';
 import { useClubStore, Club } from '@/store/club-store';
-import { Users, UserPlus, UserMinus, Loader2, Crown, Sparkles } from 'lucide-react';
+import { Users, UserPlus, UserMinus, Loader2, Crown, Sparkles, Calendar, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
 const categoryColors: Record<string, string> = {
@@ -17,6 +17,10 @@ const categoryColors: Record<string, string> = {
   SPORTS: 'from-green-500 to-lime-600',
   SOCIAL: 'from-fuchsia-500 to-purple-600',
   OTHER: 'from-gray-500 to-gray-600',
+};
+
+const categoryIcons: Record<string, string> = {
+  TECHNICAL: '⚡', CULTURAL: '🎭', SPORTS: '🏆', SOCIAL: '🌱', OTHER: '📌',
 };
 
 export function ClubsView() {
@@ -38,7 +42,7 @@ export function ClubsView() {
   };
 
   const handleJoin = async (clubId: string) => {
-    try { await joinClub(clubId); toast.success('Joined club!'); }
+    try { await joinClub(clubId); toast.success('Joined club! 🎉'); }
     catch (e: any) { toast.error(e.message || 'Failed to join'); }
   };
 
@@ -50,75 +54,148 @@ export function ClubsView() {
   const isMember = (club: any) => user && club.members?.some((m: any) => m.userId === user.id);
 
   if (isLoading && clubs.length === 0) {
-    return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
+            <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
+          </motion.div>
+          <p className="text-sm text-muted-foreground">Loading clubs...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Campus Clubs</h1>
-        <p className="text-sm text-muted-foreground">Join clubs and discover their events</p>
-      </div>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl overflow-hidden mb-6 p-6 sm:p-8 bg-gradient-to-br from-chart-2/10 via-primary/5 to-chart-4/10 border border-primary/10"
+      >
+        <div className="absolute inset-0 dot-pattern opacity-20" />
+        {[...Array(4)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1.5 h-1.5 rounded-full bg-chart-2/20"
+            style={{ top: `${20 + Math.random() * 60}%`, left: `${5 + Math.random() * 90}%` }}
+            animate={{ y: [0, -10, 0], opacity: [0.2, 0.5, 0.2] }}
+            transition={{ duration: 3 + Math.random() * 2, delay: Math.random() * 2, repeat: Infinity }}
+          />
+        ))}
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold">Campus Clubs</h1>
+            <Badge className="bg-chart-2/10 text-chart-2 border-chart-2/20 text-xs">
+              <Users className="w-2.5 h-2.5 mr-1" /> {clubs.length} Active
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">Join clubs and discover their events</p>
+        </div>
+      </motion.div>
 
+      {/* Clubs Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {clubs.map((club, i) => (
-          <motion.div key={club.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <Card className="group hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 overflow-hidden">
+          <motion.div
+            key={club.id}
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06, type: 'spring', stiffness: 100 }}
+            whileHover={{ y: -4 }}
+          >
+            <Card className="group hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 hover:border-primary/30">
+              {/* Gradient top bar */}
               <div className={`h-2 bg-gradient-to-r ${categoryColors[club.category] || categoryColors.OTHER}`} />
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-semibold text-base">{club.name}</h3>
-                  <Badge variant="outline" className="text-[10px]">{club.category}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{club.description}</p>
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
-                  <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {club._count?.members || 0} members</span>
-                  <span>{club._count?.events || 0} events</span>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{categoryIcons[club.category] || '📌'}</span>
+                    <h3 className="font-semibold text-base group-hover:text-primary transition-colors">{club.name}</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] shrink-0">{club.category}</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2 mb-4 leading-relaxed">{club.description}</p>
+
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3 text-primary/60" />
+                    {club._count?.members || 0} members
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-primary/60" />
+                    {club._count?.events || 0} events
+                  </span>
                 </div>
 
                 {club.facultyAdvisor && (
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Advisor: {club.facultyAdvisor.name}
-                  </p>
+                  <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground">
+                    <Crown className="w-3 h-3 text-amber-500" />
+                    <span>Advisor: <span className="font-medium text-foreground">{club.facultyAdvisor.name}</span></span>
+                  </div>
                 )}
 
                 {isAuthenticated && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-3 border-t border-border/30">
                     {isMember(club) ? (
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive text-xs"
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive text-xs flex-1"
                         onClick={() => handleLeave(club.id)}>
                         <UserMinus className="w-3 h-3 mr-1" /> Leave
                       </Button>
                     ) : (
-                      <Button size="sm" className="text-xs bg-primary hover:bg-primary/90"
+                      <Button size="sm" className="text-xs bg-primary hover:bg-primary/90 flex-1 shadow-md shadow-primary/10"
                         onClick={() => handleJoin(club.id)}>
-                        <UserPlus className="w-3 h-3 mr-1" /> Join
+                        <UserPlus className="w-3 h-3 mr-1" /> Join Club
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" className="text-xs"
-                      onClick={() => { setExpandedClub(expandedClub === club.id ? null : club.id); loadClubDetail(club.id); }}>
+                      onClick={() => {
+                        const isExpanded = expandedClub === club.id;
+                        setExpandedClub(isExpanded ? null : club.id);
+                        if (!isExpanded) loadClubDetail(club.id);
+                      }}>
                       {expandedClub === club.id ? 'Less' : 'Members'}
                     </Button>
                   </div>
                 )}
 
-                {expandedClub === club.id && clubDetails[club.id] && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 pt-3 border-t border-border/30 space-y-1.5 max-h-40 overflow-y-auto">
-                    {clubDetails[club.id].members?.map((m: any) => (
-                      <div key={m.id} className="flex items-center justify-between text-xs">
-                        <span>{m.user.name}</span>
-                        {m.role !== 'member' && (
-                          <Badge variant="secondary" className="text-[10px]">
-                            {m.role === 'president' && <Crown className="w-2.5 h-2.5 mr-0.5" />}
-                            {m.role}
-                          </Badge>
-                        )}
+                <AnimatePresence>
+                  {expandedClub === club.id && clubDetails[club.id] && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-3 pt-3 border-t border-border/30 space-y-2 max-h-48 overflow-y-auto">
+                        {clubDetails[club.id].members?.map((m: any, mi: number) => (
+                          <motion.div
+                            key={m.id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: mi * 0.05 }}
+                            className="flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-semibold text-primary">
+                                {m.user.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                              </div>
+                              <span className="font-medium">{m.user.name}</span>
+                            </div>
+                            {m.role !== 'member' && (
+                              <Badge variant="secondary" className="text-[10px]">
+                                {m.role === 'president' && <Crown className="w-2.5 h-2.5 mr-0.5 text-amber-500" />}
+                                {m.role}
+                              </Badge>
+                            )}
+                          </motion.div>
+                        ))}
                       </div>
-                    ))}
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </CardContent>
             </Card>
           </motion.div>

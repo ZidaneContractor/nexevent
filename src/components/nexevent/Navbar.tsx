@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/store/auth-store';
 import { useUIStore } from '@/store/ui-store';
 import {
-  Zap, Calendar, Users, Bell, Menu, X, LogOut,
+  Zap, Calendar, Users, Menu, X, LogOut,
   PlusCircle, LayoutDashboard, Shield, User, Search,
-  ScanLine, BookmarkCheck
+  ScanLine, BookmarkCheck, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { NotificationPanel } from './NotificationPanel';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
@@ -59,7 +60,7 @@ export function Navbar() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="relative w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <div className="relative w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
             <Zap className="w-4 h-4 text-primary-foreground" />
             <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-chart-4 animate-pulse" />
           </div>
@@ -70,62 +71,75 @@ export function Navbar() {
 
         {/* Search bar - only when authenticated */}
         {isAuthenticated && currentView !== 'landing' && (
-          <div className="flex-1 max-w-md hidden md:block">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <motion.div
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: 'auto' }}
+            className="flex-1 max-w-md hidden md:block"
+          >
+            <div className="relative group">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
                 placeholder="Search events, clubs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-8 bg-muted/50 border-0 focus-visible:ring-1 text-sm"
+                className="pl-9 h-8 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/30 text-sm transition-all"
               />
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Desktop Nav */}
         {isAuthenticated ? (
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-0.5">
             {navItems.map((item) => (
               <motion.button
                 key={item.view}
                 onClick={() => navigate(item.view)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   currentView === item.view
-                    ? 'bg-primary/10 text-primary'
+                    ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
+                {currentView === item.view && (
+                  <motion.div
+                    layoutId="nav-indicator"
+                    className="absolute inset-0 bg-primary/10 rounded-md"
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <item.icon className="w-4 h-4 relative z-10" />
+                <span className="relative z-10">{item.label}</span>
               </motion.button>
             ))}
           </nav>
         ) : (
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={showLogin}>Sign In</Button>
-            <Button size="sm" onClick={showRegister} className="bg-primary hover:bg-primary/90">
+            <Button size="sm" onClick={showRegister} className="bg-primary hover:bg-primary/90 shadow-md shadow-primary/20">
               Get Started
             </Button>
           </div>
         )}
 
-        {/* Right side: User menu */}
-        <div className="flex items-center gap-2">
+        {/* Right side: Notifications + User menu */}
+        <div className="flex items-center gap-1.5">
+          {isAuthenticated && <NotificationPanel />}
+
           {isAuthenticated && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full p-0.5 hover:bg-muted/50 transition-colors">
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
                     <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
                       {user ? getInitials(user.name) : '?'}
                     </AvatarFallback>
                   </Avatar>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 glass">
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-semibold">{user?.name}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
@@ -136,14 +150,14 @@ export function Navbar() {
                   )}
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('profile')}>
+                <DropdownMenuItem onClick={() => navigate('profile')} className="cursor-pointer">
                   <User className="w-4 h-4 mr-2" /> Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('my-events')}>
+                <DropdownMenuItem onClick={() => navigate('my-events')} className="cursor-pointer">
                   <Calendar className="w-4 h-4 mr-2" /> My Events
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => { logout(); navigate('landing'); }} className="text-destructive">
+                <DropdownMenuItem onClick={() => { logout(); navigate('landing'); }} className="text-destructive cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -152,10 +166,10 @@ export function Navbar() {
 
           {/* Mobile menu toggle */}
           <Button
-            variant="ghost" size="icon" className="md:hidden"
+            variant="ghost" size="icon" className="md:hidden h-8 w-8"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
       </div>
@@ -181,9 +195,12 @@ export function Navbar() {
                       className="pl-9 h-9 bg-muted/50 border-0"
                     />
                   </div>
-                  {navItems.map((item) => (
-                    <button
+                  {navItems.map((item, i) => (
+                    <motion.button
                       key={item.view}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
                       onClick={() => { navigate(item.view); setMobileMenuOpen(false); }}
                       className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                         currentView === item.view ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted/50'
@@ -191,13 +208,13 @@ export function Navbar() {
                     >
                       <item.icon className="w-4 h-4" />
                       {item.label}
-                    </button>
+                    </motion.button>
                   ))}
                 </>
               ) : (
                 <div className="flex gap-2">
                   <Button variant="outline" className="flex-1" onClick={() => { showLogin(); setMobileMenuOpen(false); }}>Sign In</Button>
-                  <Button className="flex-1" onClick={() => { showRegister(); setMobileMenuOpen(false); }}>Get Started</Button>
+                  <Button className="flex-1 bg-primary" onClick={() => { showRegister(); setMobileMenuOpen(false); }}>Get Started</Button>
                 </div>
               )}
             </div>

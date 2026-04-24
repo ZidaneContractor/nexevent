@@ -26,20 +26,15 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { notificationId, markAll, userId } = body;
+    const { userId, markAllRead, isRead } = body;
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 401 });
     }
 
-    if (markAll) {
+    if (markAllRead) {
       await db.notification.updateMany({
         where: { userId, isRead: false },
-        data: { isRead: true },
-      });
-    } else if (notificationId) {
-      await db.notification.update({
-        where: { id: notificationId },
         data: { isRead: true },
       });
     }

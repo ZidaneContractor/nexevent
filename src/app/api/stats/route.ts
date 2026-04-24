@@ -5,13 +5,39 @@ export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId');
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 401 });
+    // For unauthenticated/demo access, return public stats
+    if (!userId || userId === 'demo') {
+      const [totalEvents, totalClubs, totalRegistrations, activeEvents] = await Promise.all([
+        db.event.count({ where: { status: { in: ['APPROVED', 'LIVE', 'COMPLETED'] } } }),
+        db.club.count({ where: { isActive: true } }),
+        db.eventRegistration.count({ where: { status: { not: 'CANCELLED' } } }),
+        db.event.count({ where: { status: { in: ['APPROVED', 'LIVE'] }, startDate: { gte: new Date() } } }),
+      ]);
+
+      return NextResponse.json({
+        stats: {
+          totalEvents,
+          activeEvents,
+          totalClubs,
+          totalRegistrations,
+          userRegistrations: 0,
+          userOrganizedEvents: 0,
+          pendingApprovals: 0,
+          categoryBreakdown: [],
+        },
+      });
     }
 
     const user = await db.user.findUnique({ where: { id: userId } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      // Return basic stats even if user not found
+      const [totalEvents, totalClubs] = await Promise.all([
+        db.event.count({ where: { status: { in: ['APPROVED', 'LIVE', 'COMPLETED'] } } }),
+        db.club.count({ where: { isActive: true } }),
+      ]);
+      return NextResponse.json({
+        stats: { totalEvents, activeEvents: 0, totalClubs, totalRegistrations: 0, userRegistrations: 0, userOrganizedEvents: 0, pendingApprovals: 0, categoryBreakdown: [] },
+      });
     }
 
     const [
